@@ -1,0 +1,248 @@
+//deadstick game framework - Matej Bevec
+
+//game object definiton
+function GameObject(label){
+	this.label = label;
+
+	this.translate = mat4.create();
+	this.rotate = mat4.create();
+	this.scale = mat4.create();
+
+	this.parentMatrix = mat4.create();
+	this.children = [];
+
+	//time elapsed, since the previous frame was rendered
+	this.deltaTime = 1;
+
+	//physics (maybe) - or maybe move it to VisibleObject or new subclass
+	this.pSpeed = [0.0,0.0,0.0];
+	this.pAcceleration = [0.0,0.0,0.0];
+	this.pMass = 0;
+	this.pForces = {};
+}
+GameObject.prototype.init = function(){
+	//is called at the start of the scene
+}
+GameObject.prototype.onTick = function(){
+	//...
+	//console.log("onTick: " + this.label);
+	//do physics calculations and translate accordingly
+	//this.doPhysics();
+}
+GameObject.prototype.attach = function(object){
+	this.children.push(object);
+}
+GameObject.prototype.dettach = function(object){
+	var i = this.children.indexOf(object);
+	this.children.splice(i,1);
+}
+//return the translation matrix for the game object
+GameObject.prototype.getMatrixLocal = function(){
+	var mat = mat4.create();
+	mat4.mul(mat, this.scale, mat);
+	mat4.mul(mat, this.rotate, mat);
+	mat4.mul(mat, this.translate, mat);
+	return mat;
+}
+//setters
+GameObject.prototype.setTranslation = function(translateVector){vec4.fromTranslation(this.rotate, translateVector);}
+GameObject.prototype.setRotation = function(angle, axis){vec4.fromRotation(this.rotate, angle, axis);}
+GameObject.prototype.setScaling = function(scaleVector){vec4.fromScaling(this.scale, scaleVector);}
+//transformations
+GameObject.prototype.doTranslate = function(translateVector){
+	mat4.translate(this.translate, this.translate, translateVector);
+}
+GameObject.prototype.doRotate = function(angle, axis){
+	mat4.rotate(this.rotate, this.rotate, angle, axis);
+}
+GameObject.prototype.rotateEulers = function(eulersVector){
+	mat4.rotateX(this.rotate, this.rotate, eulersVector[0]);
+	mat4.rotateY(this.rotate, this.rotate, eulersVector[1]);
+	mat4.rotateZ(this.rotate, this.rotate, eulersVector[2]);
+}
+GameObject.prototype.doScale = function(scaleVector){
+	mat4.scale(this.scale, this.scale, scaleVector);
+}
+//physics calculations (maybe move it to VisibleObject or new subclass)
+GameObject.prototype.doPhysics = function(){
+	//calculate the acceleration vector from forces
+	if(this.pForces){
+		this.pAcceleration = [0.0,0.0,0.0];
+		for(var key in this.pForces){
+			var acc = vec4.clone(this.pForces[key]);
+			acc.map(x => x/this.pMass);
+			vec3.add(this.pAcceleration, this.pAcceleration, acc);
+		}
+	}
+	//update the object's speed
+	vec3.add(this.pSpeed, this.pSpeed, this.pAcceleration);
+	//move the object
+	this.doTranslate(this.pSpeed);
+}
+
+
+//inherets GameObject; VisibleObject is an object with a renderable 3D model
+function VisibleObject(label){
+	GameObject.call(this, label);
+	this.model = null;
+	this.texture = null;
+	this.visible = true;
+	
+}
+VisibleObject.prototype = Object.create(GameObject.prototype);
+VisibleObject.prototype.onTick = function(){
+	GameObject.prototype.onTick.call(this);	
+
+}
+//draw the object through the lens of the specified camera
+VisibleObject.prototype.draw = function(gl, programInfo, camera, lights){
+	//only draw object if object is "visible"
+	//console.log("at function draw:",this);
+	if(this.visible && this.model.buffers){
+		//console.log("hello", this.model.buffers);
+		//call the graphics.js function to draw the object
+		drawBuffers(gl, programInfo, this.model.buffers, this.texture, this.getMatrixLocal(), camera, lights);
+	}
+}
+//returns the model's vertices, transformed by the objects transformation martices
+VisibleObject.prototype.getVertices = function(){
+	var vert = null;
+	if(this.model){
+		vert = [];
+		console.log(this.model.vert);
+		var mat = this.getMatrixLocal();
+		for(var i; i < this.model.vert.length; i++){
+			//mat4.mul(v,mat,v);//wrong
+			console.log(this.model.vert[i]); //
+			vec4.tranformMat4(this.model.vert[i],this.model.vert[i],mat);
+			console.log("hello");
+			vert.push(v); //
+		}
+	}
+	return vert;
+}
+//checks whether this object collides with the given object at the moment
+//(not sure where to call it)
+VisibleObject.prototype.collidesWith = function(){
+
+}
+
+
+//inherets GameObject; a camera object renders a view into the 3D world
+function CameraObject(label, fieldOfView, aspect, clipNear, clipFar){
+	GameObject.call(this,label);
+	this.fieldOfView = fieldOfView;
+	this.aspect = aspect;
+	this.CANVAS_RATIO = gl.canvas.clientWidth / gl.canvas.clientHeight;
+	this.clipNear = clipNear;
+	this.clipFar = clipFar;
+}
+CameraObject.prototype = Object.create(GameObject.prototype);
+CameraObject.prototype.glRatio = function(gl){
+	return (gl.canvas.clientWidth / gl.canvas.clientHeight);
+}
+CameraObject.prototype.onTick = function(){
+	GameObject.prototype.onTick.call(this);
+	//camera stuff
+}
+CameraObject.prototype.getProjectionMatrix = function(){
+	var matrix = mat4.create();
+	mat4.perspective(matrix, this.fieldOfView, this.aspectRatio, this.clipNear, this.clipFar);
+	return matrix;
+}
+
+
+//inherets GameObject; this object represents a light in the scene and is called when rendering
+function LightObject(label, lightType){
+	GameObject.call(this,label);
+	this.lightType = lightType;
+	//how do I implement constants here ?
+	//spot light properties
+	this.spotAngle;
+	this.falloffRate;
+
+}
+LightObject.prototype.DIRECTIONAL = 0; LightObject.prototype.POINT = 1; LightObject.prototype.SPOT = 2;
+LightObject.prototype.onTick = function(){
+	GameObject.prototype.onTick.call(this);
+	//light stuff
+}
+
+
+//model obj test
+function loadFile(){
+	var input = document.getElementById("input");
+	var modelObj = new Model();
+	const reader = new FileReader();
+	reader.readAsText(input.files[0]);
+	reader.onload = function (){
+		//console.log(reader.result);
+		modelObj.loadObj(reader.result);
+		//console.log(modelObj);
+	}
+	//testing the visible obj
+	var vObj = new VisibleObject("vObj");
+	vObj.model = modelObj;
+	vObj.doTranslate([2.0,1.0,-5.0]);
+	//console.log(vObj);
+	console.log(vObj, vObj.getVertices());
+}
+
+//scene object experimentation
+
+function Scene(){
+	this.root = new GameObject("objRoot");
+	this.cameras = [];
+	this.lights = [];
+	this.setUp = function(){
+		//set up the scene
+	}
+}
+//document.requestAnimationFrame(this.animate);
+//draw the scene from all cameras
+Scene.prototype.draw = function(obj, gl, programInfo, camera){
+	//go recursively over all object for every camera and call draw(camera) on all of them
+	if(obj.draw){
+		obj.draw(gl, programInfo, camera, null);
+	}
+	for(var i = 0; i < obj.children.length; i++){
+		this.draw(obj.children[i], gl, programInfo, camera);
+	}
+}
+Scene.prototype.animate = function(obj){
+	if(obj.onTick){
+		obj.onTick();
+	}
+	for(var i = 0; i < obj.children.length; i++){
+		this.animate(obj.children[i]);
+	}
+}
+Scene.prototype.collision = function(){
+
+}
+
+
+
+
+//KEYBOARD INPUT HANDLING
+var Input = {};
+document.addEventListener("keydown", function(e){
+	Input[e.keyCode] = true;
+});
+document.addEventListener("keyup", function(e){
+	Input[e.keyCode] = false;
+});
+
+//CLONE A JS OBJECT
+function clone(src) {
+  let target = {};
+  for (let prop in src) {
+    if (src.hasOwnProperty(prop)) {
+      target[prop] = src[prop];
+    }
+  }
+  //console.log();
+  target.__proto__ = src.__proto__;
+  return target;
+}
+

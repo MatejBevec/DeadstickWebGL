@@ -1,0 +1,12 @@
+1. odpravi potrebo po globalnem gl kontekstu in programInfo shader programu
+
+2. implementiraj risanje hierarhije objektov
+	2.1. posodabljanje GameObject.parentMatrix spremenljivke
+
+3. implementiraj uporabo večih kamer in viewportov
+
+4. make model reading synchronous, enable pivot change
+
+5. fix multiple instances bugs
+ 5.1. texture se ne nalozi, ce nrdis nov instanco z "new"
+ 5.2. objekt se ne izrise, ce ga kopiras s "lone"
