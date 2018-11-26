@@ -150,6 +150,7 @@ function initTexture(gl, url){
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
 		gl.bindTexture(gl.TEXTURE_2D, null);
+		console.log(url, ": Texture loaded.");
 	}
 	return texture;
 }
@@ -313,6 +314,10 @@ Model.prototype.loadObj = function(obj){
 		else if(line[0] == 'f'){
 			vec = [parseInt(line[1])-1, parseInt(line[2])-1, parseInt(line[3])-1]
 			this.face.push(vec);
+			if(line[4]){
+				var vec2 = [parseInt(line[1])-1, parseInt(line[3])-1, parseInt(line[4])-1];
+				this.face.push(vec2);
+			}
 		}
 	}
 
