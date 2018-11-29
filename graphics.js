@@ -212,11 +212,11 @@ function drawBuffers(gl, programInfo, buffers, texture, transformMat, camera, li
 	//CALCULATING THE MODEL VIEW MATRIX
 
 	//modelViewMatrix - calculated from obj and camera position in the future
+	const viewMat = camera.getMatrixLocal();
+	mat4.mul(viewMat, camera.parentMatrix, viewMat);
+	mat4.invert(viewMat, viewMat);
 	const modelViewMat = mat4.create();
-	mat4.translate(modelViewMat, modelViewMat, [-0.0,0.0,-6.0]);
-	mat4.mul(modelViewMat, modelViewMat, transformMat);
-	//mat4.rotate(modelViewMat, modelViewMat, angle, [0,0,1]);
-	//mat4.rotate(modelViewMat, modelViewMat, angle*0.6, [0,1,0]);
+	mat4.mul(modelViewMat, viewMat, transformMat);
 
 	//BINDING BUFFERS
 	//bind position, normals, uv, and texture buffers to the GPU and connect them with shaders
@@ -235,7 +235,7 @@ function drawBuffers(gl, programInfo, buffers, texture, transformMat, camera, li
 
 	//create normal transformation matrix
 	const normalMat = mat4.create();
-	mat4.invert(normalMat, modelViewMat);
+	mat4.invert(normalMat, transformMat);
 	mat4.transpose(normalMat, normalMat);
 
 	//bind texture coordinates and texture file

@@ -10,3 +10,8 @@
 5. fix multiple instances bugs
  5.1. texture se ne nalozi, ce nrdis nov instanco z "new"
  5.2. objekt se ne izrise, ce ga kopiras s "lone"
+
+6. optimizacija
+	manj matričnega množenja (fromRotationTranslationScale)
+	octatrees
+	množično izrisani objekti niso različni js objekti

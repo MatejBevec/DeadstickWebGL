@@ -117,7 +117,10 @@ VisibleObject.prototype.draw = function(gl, programInfo, camera, lights){
 	if(this.visible && this.model.buffers){
 		//console.log("hello", this.model.buffers);
 		//call the graphics.js function to draw the object
-		drawBuffers(gl, programInfo, this.model.buffers, this.texture, this.getMatrixLocal(), camera, lights);
+		//possibly slow to calculate matrices every frame
+		var mat = mat4.create();
+		mat4.mul(mat, this.parentMatrix, this.getMatrixLocal());
+		drawBuffers(gl, programInfo, this.model.buffers, this.texture, mat, camera, lights);
 	}
 }
 //returns the model's vertices, transformed by the objects transformation martices
@@ -222,15 +225,24 @@ Scene.prototype.draw = function(obj, gl, programInfo, camera){
 		obj.draw(gl, programInfo, camera, null);
 	}
 	for(var i = 0; i < obj.children.length; i++){
+		//move this to seperate recursive function
 		this.draw(obj.children[i], gl, programInfo, camera);
 	}
 }
-Scene.prototype.animate = function(obj){
+//calls onTick on every object in the scene
+//calculates parentMatrices
+Scene.prototype.animate = function(obj, parentMat){
+	obj.parentMatrix = parentMat;
+
 	if(obj.onTick){
 		obj.onTick();
 	}
+	//calculate the parent matrix for al the child objects
+	var childMat = mat4.create();
+	mat4.mul(childMat, parentMat, obj.getMatrixLocal());
+
 	for(var i = 0; i < obj.children.length; i++){
-		this.animate(obj.children[i]);
+		this.animate(obj.children[i], childMat);
 	}
 }
 Scene.prototype.collision = function(){
