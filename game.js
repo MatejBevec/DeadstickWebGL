@@ -45,9 +45,25 @@ GameObject.prototype.getMatrixLocal = function(){
 	return mat;
 }
 //setters
-GameObject.prototype.setTranslation = function(translateVector){vec4.fromTranslation(this.rotate, translateVector);}
-GameObject.prototype.setRotation = function(angle, axis){vec4.fromRotation(this.rotate, angle, axis);}
-GameObject.prototype.setScaling = function(scaleVector){vec4.fromScaling(this.scale, scaleVector);}
+GameObject.prototype.setTranslation = function(translateVector){mat4.fromTranslation(this.rotate, translateVector);}
+GameObject.prototype.setRotation = function(angle, axis){mat4.fromRotation(this.rotate, angle, axis);}
+GameObject.prototype.setScaling = function(scaleVector){mat4.fromScaling(this.scale, scaleVector);}
+//getters
+GameObject.prototype.getTranslation = function(){
+	var vec = vec3.create();
+	mat4.getTranslation(vec,this.translate);
+	return vec;
+}
+GameObject.prototype.getRotation = function(){
+	var q = quat.create();
+	mat4.getRotation(q,this.rotate);
+	return quat
+}
+GameObject.prototype.getScaling = function(){
+	var vec = vec3.create();
+	mat4.getScaling(vec,this.scale);
+	return vec;
+}
 //transformations
 GameObject.prototype.doTranslate = function(translateVector){
 	mat4.translate(this.translate, this.translate, translateVector);
