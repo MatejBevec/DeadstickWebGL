@@ -181,7 +181,7 @@ function makeBackupTexture(gl){
 }
 
 //drawing the object in the buffers
-function drawBuffers(gl, programInfo, buffers, texture, transformMat, camera, lights){
+function drawBuffers(gl, programInfo, buffers, texture, transformMat, camera, lights, rotate){
 
 	//make placeholder texture if texture is not provided
 	if(!texture){
@@ -235,7 +235,7 @@ function drawBuffers(gl, programInfo, buffers, texture, transformMat, camera, li
 
 	//create normal transformation matrix
 	const normalMat = mat4.create();
-	mat4.invert(normalMat, transformMat);
+	mat4.invert(normalMat, rotate);
 	mat4.transpose(normalMat, normalMat);
 
 	//bind texture coordinates and texture file

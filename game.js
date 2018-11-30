@@ -120,7 +120,7 @@ VisibleObject.prototype.draw = function(gl, programInfo, camera, lights){
 		//possibly slow to calculate matrices every frame
 		var mat = mat4.create();
 		mat4.mul(mat, this.parentMatrix, this.getMatrixLocal());
-		drawBuffers(gl, programInfo, this.model.buffers, this.texture, mat, camera, lights);
+		drawBuffers(gl, programInfo, this.model.buffers, this.texture, mat, camera, lights, this.rotate);
 	}
 }
 //returns the model's vertices, transformed by the objects transformation martices
@@ -169,6 +169,16 @@ CameraObject.prototype.getProjectionMatrix = function(){
 	mat4.perspective(matrix, this.fieldOfView, this.aspectRatio, this.clipNear, this.clipFar);
 	return matrix;
 }
+CameraObject.prototype.lookAt = function(gameObject, up){
+	var mat = mat4.create();
+	mat4.lookAt(mat, this.getTranslation(), gameObject.getTranslation(), up);
+	var q = quat.create();
+	mat4.getRotation(q, mat);
+	mat4.fromQuat(mat, q);
+
+	this.rotate = mat;
+}
+
 
 
 //inherets GameObject; this object represents a light in the scene and is called when rendering
