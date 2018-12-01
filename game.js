@@ -241,22 +241,27 @@ Scene.prototype.draw = function(obj, gl, programInfo, camera){
 }
 //calls onTick on every object in the scene
 //calculates parentMatrices
-Scene.prototype.animate = function(obj, parentMat){
-	obj.parentMatrix = parentMat;
+Scene.prototype.animate = function(obj){
 
 	if(obj.onTick){
 		obj.onTick();
 	}
 	//calculate the parent matrix for al the child objects
+
+	for(var i = 0; i < obj.children.length; i++){
+		this.animate(obj.children[i]);
+	}
+}
+Scene.prototype.updateGlobalMat = function(obj, parentMat){
+	obj.parentMatrix = parentMat;
 	var childMat = mat4.create();
 	mat4.mul(childMat, parentMat, obj.getMatrixLocal());
 
-	for(var i = 0; i < obj.children.length; i++){
-		this.animate(obj.children[i], childMat);
-	}
-}
-Scene.prototype.collision = function(){
+	//calculate the parent matrix for al the child objects
 
+	for(var i = 0; i < obj.children.length; i++){
+		this.updateGlobalMat(obj.children[i], childMat);
+	}
 }
 
 
@@ -284,3 +289,27 @@ function clone(src) {
   return target;
 }
 
+
+
+//MATRIX DECOMPOSITION
+function isolateTranslation(mat){
+	var vec = mat4.create();
+	mat4.getTranslation(vec, mat);
+	var newMat = mat4.create();
+	mat4.fromTranslation(newMat, vec)
+	return newMat;
+}
+function isolateRotation(mat){
+	var q = quat.create();
+	mat4.getRotation(q, mat);
+	var newMat = mat4.create();
+	mat4.fromQuat(newMat, q);
+	return newMat;
+}
+function isolateScaling(mat){
+	var vec = mat4.create();
+	mat4.getScaling(vec, mat);
+	var newMat = mat4.create();
+	mat4.fromScaling(newMat, vec);
+	return newMat;
+}
