@@ -44,6 +44,11 @@ GameObject.prototype.getMatrixLocal = function(){
 	mat4.mul(mat, this.translate, mat);
 	return mat;
 }
+GameObject.prototype.getMatrixGlobal = function(){
+	var mat = mat4.create();
+	mat4.mul(mat,this. parentMatrix, this.getMatrixLocal());
+	return mat;
+}
 //setters
 GameObject.prototype.setTranslation = function(translateVector){mat4.fromTranslation(this.rotate, translateVector);}
 GameObject.prototype.setRotation = function(angle, axis){mat4.fromRotation(this.rotate, angle, axis);}
@@ -103,11 +108,19 @@ function VisibleObject(label){
 	this.model = null;
 	this.texture = null;
 	this.visible = true;
+
+	//collider / bounding box
+	this.aabb = {
+		minInit: [0,0,0],
+		maxInit: [0,0,0],
+		min: [0,0,0],
+		max: [0,0,0],
+	}
 	
 }
 VisibleObject.prototype = Object.create(GameObject.prototype);
 VisibleObject.prototype.onTick = function(){
-	GameObject.prototype.onTick.call(this);	
+	GameObject.prototype.onTick.call(this);
 
 }
 //draw the object through the lens of the specified camera
@@ -118,9 +131,7 @@ VisibleObject.prototype.draw = function(gl, programInfo, camera, lights){
 		//console.log("hello", this.model.buffers);
 		//call the graphics.js function to draw the object
 		//possibly slow to calculate matrices every frame
-		var mat = mat4.create();
-		mat4.mul(mat, this.parentMatrix, this.getMatrixLocal());
-		drawBuffers(gl, programInfo, this.model.buffers, this.texture, mat, camera, lights, this.rotate);
+		drawBuffers(gl, programInfo, this.model.buffers, this.texture, this.getMatrixGlobal(), camera, lights, this.rotate);
 	}
 }
 //returns the model's vertices, transformed by the objects transformation martices
@@ -142,10 +153,27 @@ VisibleObject.prototype.getVertices = function(){
 }
 //checks whether this object collides with the given object at the moment
 //(not sure where to call it)
-VisibleObject.prototype.collidesWith = function(){
-
+VisibleObject.prototype.collidesWithPoint = function(point){
+	var check = (point[0] >= this.aabb.min[0] && point[0] <= this.aabb.max[0]) &&
+				(point[1] >= this.aabb.min[1] && point[1] <= this.aabb.max[1]) &&
+				(point[2] >= this.aabb.min[2] && point[2] <= this.aabb.max[2]);
+	return check;
 }
-
+VisibleObject.prototype.collidesWith = function(obj){
+	if(obj && obj.aabb){
+	var check = (obj.aabb.min[0] <= this.aabb.max[0] && this.aabb.min[0] <= obj.aabb.max[0]) &&
+				(obj.aabb.min[1] <= this.aabb.max[1] && this.aabb.min[1] <= obj.aabb.max[1]) &&
+				(obj.aabb.min[2] <= this.aabb.max[2] && this.aabb.min[2] <= obj.aabb.max[2]);
+	return check;
+	}
+	else{
+		return false;
+	}
+}
+VisibleObject.prototype.updateAABB = function(){
+	vec3.transformMat4(this.aabb.min, this.aabb.minInit, this.translate);
+	vec3.transformMat4(this.aabb.max, this.aabb.maxInit, this.translate);
+}
 
 //inherets GameObject; a camera object renders a view into the 3D world
 function CameraObject(label, fieldOfView, aspect, clipNear, clipFar){
@@ -227,6 +255,14 @@ function Scene(){
 		//set up the scene
 	}
 }
+Scene.prototype.attach = function(obj){
+	this.root.attach(obj);
+}
+Scene.prototype.attachGroup = function(group){
+	for(var i in group){
+		this.root.attach(group[i]);
+	}
+}
 //document.requestAnimationFrame(this.animate);
 //draw the scene from all cameras
 Scene.prototype.draw = function(obj, gl, programInfo, camera){
@@ -277,6 +313,7 @@ document.addEventListener("keyup", function(e){
 });
 
 //CLONE A JS OBJECT
+//!!doesn't work
 function clone(src) {
   let target = {};
   for (let prop in src) {
