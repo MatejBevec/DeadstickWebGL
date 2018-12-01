@@ -30,7 +30,7 @@ const shader1 = {
 		//fog
 		highp vec3 fogColor = vec3(0.6,0.6,1.0);
 		highp float distanceFromCamera = length(uModelViewMat * aVertexPos);
-		highp float fogPercent = clamp((100.0 - distanceFromCamera) / (100.0 - 20.0), 0.0, 1.0);
+		highp float fogPercent = clamp((200.0 - distanceFromCamera) / (200.0 - 40.0), 0.0, 1.0);
 		vFog = fogPercent * fogColor;
 
 
@@ -49,7 +49,7 @@ const shader1 = {
 	void main(){
 		highp vec4 texelColor = texture2D(uSampler, vUVCoord);
 		highp vec3 surfaceColor = texelColor.rgb * vLighting;
-		highp vec3 fogColor = vec3(1.0,1.0,1.0);
+		highp vec3 fogColor = vec3(0.3,0.6,1.0);
 		gl_FragColor = vec4(surfaceColor, texelColor.a);
 		//gl_FragColor = vec4(mix(fogColor, surfaceColor, vFog), texelColor.a);
 		//gl_FragColor = texelColor;

@@ -291,6 +291,9 @@ function Model(label){
 	this.loaded = false;
 	this.text;
 	this.buffers = null;
+
+	//mesh object from external library
+	this.mesh = null;
 }
 Model.prototype.loadObj = function(obj){
 	console.log(this.label + ": Parsing obj file ...");
@@ -330,26 +333,20 @@ Model.prototype.loadObj = function(obj){
 	this.loaded = true;
 	console.log(this.label + ": Model loaded.");
 }
-Model.prototype.loadObjExternal = function(obj){
-	var mesh = new OBJ.Mesh(obj);
-	var v = mesh.vertices;
-	var n = mesh.vertexNormals;
-	var t = mesh.textures;
-	console.log(mesh);
-	for(var i = 0; i < v.length; i+=3){
-		this.vert.push([v[i], v[i+1], v[i+2]]);
-		this.norm.push([n[i], n[i+1], n[i+2]]);
-		this.uv.push([t[i], t[i+1], t[i+2]]);
-	}
-	var f = mesh.indices;
-	for(var i = 0; i < f.length; i++){
-		this.face.push([f[i], f[i+1], f[i+2]]);
-	}
-	this.center();
-	this.buffers = initBuffer(gl, this);
+//parse .obj file using an external library
+Model.prototype.loadObjEx = function(obj){
+	this.mesh = new OBJ.Mesh(obj);
+	this.centerEx();
+	OBJ.initMeshBuffers(gl, this.mesh);
+	this.buffers = {};
+	this.buffers.position = this.mesh.vertexBuffer;
+	this.buffers.normals = this.mesh.normalBuffer;
+	this.buffers.uvCoordinates = this.mesh.textureBuffer;
+	this.buffers.faces = this.mesh.indexBuffer;
 	this.loaded = true;
 	console.log(this.label + ": Model loaded.");
 }
+//centering methods - move the average of all vertices to [0,0,0]
 Model.prototype.center = function(){
 		var x = 0; var y = 0; var z = 0;
 		var l = this.vert.length;
@@ -369,6 +366,30 @@ Model.prototype.center = function(){
 		}
 		//this.buffers = initBuffer(gl,this);
 }
+Model.prototype.centerEx = function(){
+	var x = 0; var y = 0; var z = 0;
+	var l = this.mesh.vertices.length;
+
+	for(var i = 0; i<l; i+=3){
+		x = (x+this.mesh.vertices[i]);
+		y = (y+this.mesh.vertices[i+1]);
+		z = (z+this.mesh.vertices[i+2]);
+		//console.log(this.mesh.vertices[i+1]);
+	}
+
+	var t = [];
+	var v = vec3.fromValues(-x/(l/3),-y/(l/3),-z/(l/3));
+
+	mat4.fromTranslation(t,v);
+	for(var i = 0; i<l; i+=3){
+			var p = [this.mesh.vertices[i],
+					this.mesh.vertices[i+1],this.mesh.vertices[i+2]];
+			vec3.transformMat4(p,p,t);
+			this.mesh.vertices[i] = p[0];
+			this.mesh.vertices[i+1] = p[1];
+			this.mesh.vertices[i+2] = p[2];
+	}
+}
 Model.prototype.openUrl = function(url, filetype){
 	this.loaded = false;
 	var request = new XMLHttpRequest();
@@ -379,7 +400,7 @@ Model.prototype.openUrl = function(url, filetype){
 	request.onreadystatechange = function(){
 		if(request.readyState == 4){
 			if(filetype == "obj" || filetype == ".obj"){
-				thisObject.loadObj(request.responseText);
+				thisObject.loadObjEx(request.responseText);
 			}
 		}
 	}
