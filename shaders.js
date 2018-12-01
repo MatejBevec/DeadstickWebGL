@@ -50,8 +50,8 @@ const shader1 = {
 		highp vec4 texelColor = texture2D(uSampler, vUVCoord);
 		highp vec3 surfaceColor = texelColor.rgb * vLighting;
 		highp vec3 fogColor = vec3(0.3,0.6,1.0);
-		gl_FragColor = vec4(surfaceColor, texelColor.a);
-		//gl_FragColor = vec4(mix(fogColor, surfaceColor, vFog), texelColor.a);
+		//gl_FragColor = vec4(surfaceColor, texelColor.a);
+		gl_FragColor = vec4(mix(fogColor, surfaceColor, vFog), texelColor.a);
 		//gl_FragColor = texelColor;
 		//gl_FragColor = vec4(1.0,1.0,1.0,1.0);
 	}

@@ -95,6 +95,19 @@ function FlyingBoi(label){
 	this.history = [];
 }
 FlyingBoi.prototype = Object.create(VisibleObject.prototype);
+//implement in game object class !!!
+FlyingBoi.prototype.onStart = function(){
+	this.rotate = mat4.create();
+	this.doRotate(-90*Math.PI/180, [1,0,0]);
+	this.doRotate(Math.PI, [0,1,0]);
+
+	this.rotRateX = 0;
+	this.rotRateY = 0;
+	this.rotRateZ = 0;
+	this.spd = 0.1;
+
+	this.history = [];
+}
 FlyingBoi.prototype.onTick = function(){
 	VisibleObject.prototype.onTick.call(this);
 	this.updateAABB();
@@ -109,6 +122,9 @@ FlyingBoi.prototype.onTick = function(){
 	}
 	else{
 		this.rotRateZ -= Math.sign(this.rotRateZ)*0.003;
+		if(Math.abs(this.rotRateZ) < 0.003){
+			this.rotRateZ = 0;
+		}
 	}
 	this.doRotate(this.rotRateZ, [0,1,0]);
 
@@ -122,6 +138,9 @@ FlyingBoi.prototype.onTick = function(){
 	}
 	else{
 		this.rotRateX -= Math.sign(this.rotRateX)*0.003;
+		if(Math.abs(this.rotRateX) < 0.003){
+			this.rotRateX = 0;
+		}
 	}
 	this.doRotate(this.rotRateX, [1,0,0]);
 

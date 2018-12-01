@@ -92,16 +92,35 @@ function start(){
 		rings[i] = ring;
 	}
 	var currentRing = 0;
-	console.log(rings[currentRing]);
+	var started = false;
+	var raceTime = 0;
+	var startTime = 0;
+	var oGhost = null;
+	//reseting
+	var rTime = 0;
+	//storing runs in array of objects of type {time(num), ghost(Ghost)}
+	var runs = [];
+	//compare func for sorting runs
+	function compareRuns(a,b){
+		if(a.time < b.time){return -1;}
+		if(a.time > b.time){return 1;}
+		return 0;
+	}
+	function resetGhosts(r){
+		for(var i in r){
+			scene.root.dettach(r[i].ghost);
+	    	r[i].ghost.step = 0;
+	    	scene.root.attach(r[i].ghost);
+	    }
+	}
 
 
 	//INTIALIZING THE SCENE
 	//add objects to scene
-	scene = new Scene();
+	scene = new Scene("scene1");
 	oBoi.attach(camera);
 	oAvioncl.attach(camera2);
 	//scene.root.attach(oAvioncl);
-	scene.root.attach(exampleObject);
 	scene.root.attach(oSurface);
 	scene.root.attach(oBoi);
 	scene.attachGroup(rings);
@@ -109,46 +128,89 @@ function start(){
 	//extra variables
 
 	//GAME LOOP
-	var d = new Date();
-	var startTime = d.getTime();
 	var then;
 	function render(now) {
 		//get time
 	    now *= 0.001;  // convert to seconds
 	    const deltaTime = now - then;
 	    then = now;
+	    //the time during the current frame
+	    const frameTime = (new Date()).getTime();
 
 	 	
 	    //extra game logic
-	   	if(Input[13]){
-	   		var oGhost = new Ghost("oGhost", oBoi.history);
-	   		//oGhost.path = oBoi.history();
-	   		scene.root.attach(oGhost);
-	   	}
-	   	if(Input[16]){
-	   		console.log();
-	   	}
 
 
 	    //game logic in onTick method of scene objects
 	   	var mat = mat4.create();
-	    scene.animate(scene.root, mat);
+	    scene.animate(scene.root);
 	    scene.updateGlobalMat(scene.root, mat);
 
-	    //rings
+	    //ring object logic
+	    if(Input[32] && !started){
+	    	started = true;
+	    	startTime = frameTime;
+	    	oBoi.history = [];
+	    	console.log(oGhost);
+	    	//attach ghosts of all previous runs to the scene
+	    	resetGhosts(runs);
+	    	/*if(oGhost){
+	    		scene.root.attach(oGhost);
+	    	}*/
+	    }
+	    if(started){
+	    	//raceTime = frameTime - startTime;
+	    	raceTime = frameTime - startTime;
+	    }
+	    //finishing the race
 	   	if(oBoi.collidesWith(rings[currentRing]) && !rings[currentRing].tagged){
 	   		rings[currentRing].tagged = true;
 	   		currentRing++;
 	   		if(currentRing == numRings){
-	   			var oGhost = new Ghost("oGhost", oBoi.history);
-	   			scene.root.attach(oGhost);
+	   			//create new ghost object for the current run
+	   			resetGhosts(runs);
+	   			/*if(oGhost){
+	   				scene.root.dettach(oGhost);
+	   			}*/
+	   			oGhost = new Ghost("oGhost", oBoi.history.slice());
+	   			//store this run with previous runs
+	   			runs.push({
+	   				time: raceTime,
+	   				ghost: oGhost
+	   			});
+	   			//sort runs from fastest to slowest time
+	   			runs.sort(compareRuns);
+	   			//reset the race
 	   			oBoi.translate = mat4.create();
+	   			oBoi.onStart();
 	   			currentRing = 0;
 	   			for(i in rings){
 	   				rings[i].tagged = false;
 	   			}
+	   			started = false;
+	   			raceTime = 0;
+	   			Input[32] = false;
 
 	   		}
+	   	}
+	   	//reset the race from user input
+	   	if(Input[13]){
+	   		rTime += deltaTime;
+	   		if(rTime >= 3){
+	   			resetGhosts(runs);
+	   			oBoi.translate = mat4.create();
+	   			oBoi.onStart();
+	   			for(i in rings){
+	   				rings[i].tagged = false;
+	   			}
+	   			currentRing = 0;
+	   			started = false;
+	   			raceTime = 0;
+	   			Input[32] = false;
+	   		}
+	   	}
+	   	else{
+	   		rTime = 0;
 	   	}
 
 
@@ -158,16 +220,38 @@ function start(){
 	    scene.draw(scene.root, gl, programInfo, camera);
 
 	    //DRAW GUI
+	    ctx.textAlign = "left";
 	    ctx.fillStyle = "rgba(255,255,255,255)"
 	    ctx.clearRect(0,0,UIcanvas.width,UIcanvas.height);
 		ctx.font="20px Verdana";
 		var oBoiPos = oBoi.getTranslation();
 		//ctx.fillText("x: " + oBoiPos[0].toFixed(1) + "  y: " + oBoiPos[1].toFixed(1) + "  z: " + oBoiPos[2].toFixed(1), 20,30);
 		ctx.fillText("progress: " + currentRing + "/" + numRings,20,30)
+		ctx.fillText("time: " + (raceTime/1000).toFixed(1), 20, 55)
 		//ctx.fillText("oBoi box: " + oBoi.aabb.min.toString()
 		//	+ " | " +  oBoi.aabb.max.toString(),20,70);
-		ctx.fillText(oBoi.collidesWith(rings[currentRing]),20,90);
+		//ctx.fillText(oBoi.collidesWith(rings[currentRing]),20,90);
 		ctx.fillText("DEADSTICK", UIcanvas.width-135, 30);
+
+		//start screen
+		if(!started){
+			ctx.textAlign = "center";
+			var offX = UIcanvas.width/2;
+			ctx.fillText("Press SPACE to start.", offX, UIcanvas.height-30);
+			//results
+			var offY = 50;
+			ctx.fillText("BEST RUNS", offX, offY);
+			if(runs.length > 0){
+				var l = Math.min(runs.length, 10);
+				for(var i = 0; i < runs.length; i++){
+					offY += 25;
+					ctx.fillText((i+1) + " ~ " + (runs[i].time/1000).toFixed(2) + "s", offX, offY);
+				}
+			}
+			else{
+				ctx.fillText("No results yet.", offX, offY+25);
+			}
+		}
 
 
 
