@@ -8,16 +8,13 @@
 		<script src="./gl-matrix-min.js" type="text/javascript"></script>
 		<script src="./game-objects.js" type="text/javascript"></script>
 		<script src="./main.js" type="text/javascript"></script>
-		<script src="./a.js" type="text/javascript"></script>
+		<script src="./webgl-obj-loader.min.js" type="text/javascript"></script>
 	</head>
-	<body style="text-align:center" onload="start()">
-		<h2>Deadstick - WebGL Game</h2>
-		<div id="mainDiv">
-			<canvas id="canvas" height="480px" width="640px" style="border:1px solid #dddddd"></canvas>
+	<body style="text-align:center;" onload="start()">
+		<div id="mainDiv" style="position: relative; text-align: center;" >
+			<canvas id="canvas" style="position: absolute; left: 0; top: 0; z-index: 0;" height="480px" width="640px" style="border:1px solid #dddddd"></canvas>
+			<canvas id="UIcanvas" style="position: absolute; left: 0; top: 0; z-index: 1;" height="480px" width="640px" style="border:1px solid #dddddd"></canvas>
 		</div>
 		<br>
-		<form>
-			<input type="file" id="input" name="inputFile" onchange="loadFile()">
-		</form>
 	</body>
 </html>

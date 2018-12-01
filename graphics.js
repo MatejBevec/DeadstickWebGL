@@ -212,9 +212,13 @@ function drawBuffers(gl, programInfo, buffers, texture, transformMat, camera, li
 	//CALCULATING THE MODEL VIEW MATRIX
 
 	//modelViewMatrix - calculated from obj and camera position in the future
-	const viewMat = camera.getMatrixLocal();
-	mat4.mul(viewMat, camera.parentMatrix, viewMat);
+	const viewMat = camera.getMatrixGlobal();
+	//very slow, not ideal
+	var r =  isolateRotation(viewMat);
+	var t = isolateTranslation(viewMat);
+	//mat4.mul(viewMat, t, r);
 	mat4.invert(viewMat, viewMat);
+	//end of slow
 	const modelViewMat = mat4.create();
 	mat4.mul(modelViewMat, viewMat, transformMat);
 
@@ -235,7 +239,7 @@ function drawBuffers(gl, programInfo, buffers, texture, transformMat, camera, li
 
 	//create normal transformation matrix
 	const normalMat = mat4.create();
-	mat4.invert(normalMat, rotate);
+	mat4.invert(normalMat, isolateRotation(transformMat));
 	mat4.transpose(normalMat, normalMat);
 
 	//bind texture coordinates and texture file
@@ -321,6 +325,26 @@ Model.prototype.loadObj = function(obj){
 		}
 	}
 
+	this.center();
+	this.buffers = initBuffer(gl, this);
+	this.loaded = true;
+	console.log(this.label + ": Model loaded.");
+}
+Model.prototype.loadObjExternal = function(obj){
+	var mesh = new OBJ.Mesh(obj);
+	var v = mesh.vertices;
+	var n = mesh.vertexNormals;
+	var t = mesh.textures;
+	console.log(mesh);
+	for(var i = 0; i < v.length; i+=3){
+		this.vert.push([v[i], v[i+1], v[i+2]]);
+		this.norm.push([n[i], n[i+1], n[i+2]]);
+		this.uv.push([t[i], t[i+1], t[i+2]]);
+	}
+	var f = mesh.indices;
+	for(var i = 0; i < f.length; i++){
+		this.face.push([f[i], f[i+1], f[i+2]]);
+	}
 	this.center();
 	this.buffers = initBuffer(gl, this);
 	this.loaded = true;

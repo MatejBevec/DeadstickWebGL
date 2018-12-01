@@ -170,6 +170,26 @@ VisibleObject.prototype.collidesWith = function(obj){
 		return false;
 	}
 }
+VisibleObject.prototype.collidesWithMesh = function(obj){
+	var trans = obj.getMatrixGlobal();
+	mat4.invert(trans, trans);
+	min = this.aabb.min;
+	max = this.aabb.max;
+	var t = isolateTranslation(trans);
+	vec3.transformMat4(min, min, t);
+	vec3.transformMat4(max, max, t);
+
+	for(var i in obj.model.vert){
+		var point = obj.model.vert[i];
+		var check = (point[0] >= min[0] && point[0] <= max[0]) &&
+				(point[1] >= min[1] && point[1] <= max[1]) &&
+				(point[2] >= min[2] && point[2] <= max[2]);
+		if(check){
+			return true;
+		}
+	}
+	return false;
+}
 VisibleObject.prototype.updateAABB = function(){
 	vec3.transformMat4(this.aabb.min, this.aabb.minInit, this.translate);
 	vec3.transformMat4(this.aabb.max, this.aabb.maxInit, this.translate);
@@ -293,7 +313,7 @@ Scene.prototype.updateGlobalMat = function(obj, parentMat){
 	var childMat = mat4.create();
 	mat4.mul(childMat, parentMat, obj.getMatrixLocal());
 
-	//calculate the parent matrix for al the child objects
+	//calculate the parent matrix for all the child objects
 
 	for(var i = 0; i < obj.children.length; i++){
 		this.updateGlobalMat(obj.children[i], childMat);
