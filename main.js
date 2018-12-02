@@ -102,13 +102,18 @@ function start(){
 		if(a.time > b.time){return 1;}
 		return 0;
 	}
-	function resetGhosts(r){
+	function initGhosts(r){
 		for(var i in r){
-			scene.root.dettach(r[i].ghost);
 	    	r[i].ghost.step = 0;
 	    	scene.root.attach(r[i].ghost);
 	    }
 	}
+	function dettachGhosts(r){
+		for(var i in r){
+			scene.root.dettach(r[i].ghost);
+		}
+	}
+	var prevRun = null;
 
 
 	//INTIALIZING THE SCENE
@@ -147,12 +152,13 @@ function start(){
 	    	started = true;
 	    	startTime = frameTime;
 	    	oBoi.history = [];
-	    	console.log(oGhost);
+	    	console.log("HELLO");
 	    	//attach ghosts of all previous runs to the scene
-	    	resetGhosts(runs);
+	    	initGhosts(runs);
 	    	/*if(oGhost){
 	    		scene.root.attach(oGhost);
 	    	}*/
+	    	raceTime = 0;
 	    }
 	    if(started){
 	    	//raceTime = frameTime - startTime;
@@ -164,16 +170,17 @@ function start(){
 	   		currentRing++;
 	   		if(currentRing == numRings){
 	   			//create new ghost object for the current run
-	   			resetGhosts(runs);
+	   			dettachGhosts(runs);
 	   			/*if(oGhost){
 	   				scene.root.dettach(oGhost);
 	   			}*/
 	   			oGhost = new Ghost("oGhost", oBoi.history.slice());
 	   			//store this run with previous runs
-	   			runs.push({
+	   			prevRun = {
 	   				time: raceTime,
 	   				ghost: oGhost
-	   			});
+	   			}
+	   			runs.push(prevRun);
 	   			//sort runs from fastest to slowest time
 	   			runs.sort(compareRuns);
 	   			//reset the race
@@ -190,19 +197,20 @@ function start(){
 	   		}
 	   	}
 	   	//reset the race from user input
-	   	if(Input[13]){
+	   	if(Input[82]){
 	   		rTime += deltaTime;
 	   		if(rTime >= 3){
-	   			resetGhosts(runs);
+	   			dettachGhosts(runs);
 	   			oBoi.translate = mat4.create();
 	   			oBoi.onStart();
+	   			currentRing = 0;
 	   			for(i in rings){
 	   				rings[i].tagged = false;
 	   			}
-	   			currentRing = 0;
 	   			started = false;
 	   			raceTime = 0;
 	   			Input[32] = false;
+	   			rTime = 0;
 	   		}
 	   	}
 	   	else{
@@ -259,18 +267,26 @@ function start(){
 			var offY = 50;
 			ctx.fillText("BEST RUNS", offX, offY);
 			if(runs.length > 0){
-				var l = Math.min(runs.length, 10);
-				for(var i = 0; i < runs.length; i++){
+				//note new record
+				if(prevRun == runs[0] && runs.length > 1){
 					offY += 25;
-					ctx.fillText((i+1) + " ~ " + (runs[i].time/1000).toFixed(2) + "s", offX, offY);
+					ctx.fillText("New best time !", offX, offY);
+				}
+				//display the best 10 times
+				var l = Math.min(runs.length, 10);
+				for(var i = 0; i < l; i++){
+					offY += 25;
+					var str = ((i+1) + " ~ " + (runs[i].time/1000).toFixed(2) + "s");
+					if(prevRun == runs[i]){
+						str = ("> " + str + " <");
+					}
+					ctx.fillText(str, offX, offY);
 				}
 			}
 			else{
 				ctx.fillText("No results yet.", offX, offY+25);
 			}
 		}
-
-
 
 	    requestAnimationFrame(render);
  	}

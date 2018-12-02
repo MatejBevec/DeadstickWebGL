@@ -46,8 +46,7 @@ function RingObject(label){
 	this.prev = null;
 	this.index = 0;
 
-	this.start = false; //starting ring
-	this.finish = false; //final ring
+	this.step; //the race step at which the ring was tagged
 }
 RingObject.prototype = Object.create(VisibleObject.prototype);
 RingObject.prototype.onTick = function(){
@@ -132,8 +131,8 @@ FlyingBoi.prototype.onTick = function(){
 		if(Input[83] && this.rotRateX > -0.05){
 			this.rotRateX -= 0.003;
 		}
-		if(Input[87] && this.rotRateX < 0.05){
-			this.rotRateX += 0.003;
+		if(Input[87] && this.rotRateX < 0.02){
+			this.rotRateX += 0.002;
 		}
 	}
 	else{
