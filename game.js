@@ -206,7 +206,9 @@ function CameraObject(label, fieldOfView, aspect, clipNear, clipFar){
 }
 CameraObject.prototype = Object.create(GameObject.prototype);
 CameraObject.prototype.glRatio = function(gl){
-	return (gl.canvas.clientWidth / gl.canvas.clientHeight);
+	//return (gl.canvas.clientWidth / gl.canvas.clientHeight);
+	vp = gl.getParameter(gl.VIEWPORT);
+	return vp[2]/vp[3];
 }
 CameraObject.prototype.onTick = function(){
 	GameObject.prototype.onTick.call(this);

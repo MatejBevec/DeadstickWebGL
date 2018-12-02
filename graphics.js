@@ -201,7 +201,9 @@ function drawBuffers(gl, programInfo, buffers, texture, transformMat, camera, li
 
 	//set to given camera's attribute values in the future
 	const fieldOfView = camera.fieldOfView * Math.PI/180;
-	const aspect = camera.aspect;
+	vp = gl.getParameter(gl.VIEWPORT)
+	const aspect = vp[2]/vp[3];
+	//const aspect = camera.aspect;
 	const clipNear = camera.clipNear;
 	const clipFar = camera.clipFar;
 	

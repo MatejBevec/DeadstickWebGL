@@ -4,6 +4,9 @@ var UIcanvas;
 var gl;
 var ctx;
 var canvasRatio;
+var fullscreen;
+var sWidth;
+var sHeight;
 
 //declare game objects
 var oBoi;
@@ -17,23 +20,16 @@ var scene;
 
 function start(){
 
-	//some testing
-	var mat = mat4.create();
-	mat4.translate(mat, mat, [-1,-2,-3]);
-	mat4.rotate(mat, mat, 1, [0,1,0]);
-	mat4.scale(mat, mat, [2,2,2]);
-	
-	
-	var mat2 = mat4.create();
-	//mat4.fromRotationTranslationScale(mat2, q, v, s);
-	console.log(isolateTranslation(mat), isolateRotation(mat), isolateScaling(mat));
-
 	//GL INITIALIZATION
 
 	canvas = document.getElementById("canvas");
 	UIcanvas = document.getElementById("UIcanvas");
 	gl = canvas.getContext("webgl");
 	ctx = UIcanvas.getContext("2d");
+
+	sWidth = window.screen.width;
+	sHeight = window.screen.height;
+	fullscreen = false;
 
 	if (gl === null){
 		alert("Unable to initialize WebGL");
@@ -48,7 +44,7 @@ function start(){
 	//END OF GL INITIALIZATION
 
 	//initializing the camera and the shader
-	const camera = new CameraObject("cam1", 55, CameraObject.prototype.glRatio(gl), 0.01, 10000.0);
+	const camera = new CameraObject("cam1", 60, CameraObject.prototype.glRatio(gl), 0.01, 10000.0);
 	//for avioncl
 	//camera.doTranslate([0,3,-15]);
 	camera.doRotate(Math.PI, [0,1,0]);
@@ -213,6 +209,27 @@ function start(){
 	   		rTime = 0;
 	   	}
 
+	   	//toggle fullscreen
+	   	//70 = 'f' 122 = 'f11'
+	   	if(Input[122] && !fullscreen){
+	   		canvas.height = sHeight;
+			canvas.width = sWidth;
+			UIcanvas.height = sHeight;
+			UIcanvas.width = sWidth;
+			gl.viewport(0,0, sWidth, sHeight);
+			fullscreen = true;
+			Input[122] = false;
+	   	}
+
+	   	if(Input[122] && fullscreen){
+	   		canvas.height = 480;
+			canvas.width = 640;
+			UIcanvas.height = 480;
+			UIcanvas.width = 640;
+			gl.viewport(0,0, 640, 480);
+			fullscreen = false;
+			Input[122] = false;
+	   	}
 
 	    //refresh frame
 	    refreshFrame(gl);
