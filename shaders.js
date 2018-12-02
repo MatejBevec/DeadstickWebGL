@@ -12,7 +12,7 @@ const shader1 = {
 
 	varying highp vec2 vUVCoord;
 	varying highp vec3 vLighting;
-	varying highp vec3 vFog;
+	varying highp float vFog;
 
 	void main(){
 		gl_Position  = uProjectionMat* uModelViewMat * aVertexPos;
@@ -31,7 +31,8 @@ const shader1 = {
 		highp vec3 fogColor = vec3(0.6,0.6,1.0);
 		highp float distanceFromCamera = length(uModelViewMat * aVertexPos);
 		highp float fogPercent = clamp((200.0 - distanceFromCamera) / (200.0 - 40.0), 0.0, 1.0);
-		vFog = fogPercent * fogColor;
+		//vFog = fogPercent * fogColor;
+		vFog = fogPercent;
 
 
 	}
@@ -42,7 +43,7 @@ const shader1 = {
 	
 	varying highp vec2 vUVCoord;
 	varying highp vec3 vLighting;
-	varying highp vec3 vFog;
+	varying highp float vFog;
 
 	uniform sampler2D uSampler;
 
