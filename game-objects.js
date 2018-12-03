@@ -39,8 +39,8 @@ function RingObject(label){
 
 	this.doScale([0.3,0.3,0.3]);
 
-	this.aabb.minInit = [-4,-4, -2];
-	this.aabb.maxInit = [4,4,2];
+	this.aabb.minInit = [-3,-3, -2];
+	this.aabb.maxInit = [3,3,2];
 
 	this.tagged = false;
 	this.prev = null;
@@ -80,8 +80,9 @@ function FlyingBoi(label){
 
 	//this.direction = [1.0,1.0,1.0];
 
-	this.aabb.minInit = [-1,1,-1];
-	this.aabb.maxInit = [1,1,1];
+	this.aabb = new BoxCollider([0,0,0],[0,0,0]);
+	this.aabb.minInit = [-1.3,-1.3,-1.3];
+	this.aabb.maxInit = [1.3,1.3,1.3];
 
 	this.doRotate(-90*Math.PI/180, [1,0,0]);
 	this.doRotate(Math.PI, [0,1,0]);
@@ -315,3 +316,19 @@ Avioncl.prototype.onTick = function(){
 	
 }
 
+
+function TerrainObject(label){
+	VisibleObject.call(this, label);
+
+	mTerrain = new Model("mTerrain");
+	mTerrain.openUrl('./assets/terrain1.obj', 'obj');
+	this.model = mTerrain;
+
+	this.texture = initTexture(gl, './assets/sand.jpg');
+
+	this.verts = null;
+}
+TerrainObject.prototype = Object.create(VisibleObject.prototype);
+TerrainObject.prototype.generateHeightMap = function(){
+	
+}

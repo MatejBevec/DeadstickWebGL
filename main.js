@@ -8,6 +8,9 @@ var fullscreen;
 var sWidth;
 var sHeight;
 
+//other
+var paused;
+
 //declare game objects
 var oBoi;
 var oAvioncl;
@@ -30,6 +33,8 @@ function start(){
 	sWidth = window.screen.width;
 	sHeight = window.screen.height;
 	fullscreen = false;
+
+	paused = false;
 
 	if (gl === null){
 		alert("Unable to initialize WebGL");
@@ -60,13 +65,7 @@ function start(){
 
 	//INITIALIZING GAME OBJECTS
 
-	oSurface = new VisibleObject("oSurface");
-	var mSurface = new Model("mSurface");
-	mSurface.openUrl('./assets/terrain1.obj', 'obj');
-	oSurface.model = mSurface;
-	oSurface.texture = initTexture(gl, './assets/sand.jpg');
-	console.log(oSurface.texture);
-	//oSurface.doScale([0.5,0.5,0.5]);
+	oSurface = new TerrainObject("oSurface");
 	oSurface.doTranslate([0,-10,-120]);
 	oSurface.doScale([10,10,10]);
 
@@ -149,6 +148,10 @@ function start(){
 
 	    //ring object logic
 	    if(Input[32] && !started){
+	    	//temporary
+	    	oSurface.verts = oSurface.getVertices();
+	    	console.log(oSurface.verts);
+	    	//end of temporary
 	    	started = true;
 	    	startTime = frameTime;
 	    	oBoi.history = [];
@@ -199,7 +202,12 @@ function start(){
 	   	//reset the race from user input
 	   	if(Input[82]){
 	   		rTime += deltaTime;
-	   		if(rTime >= 3){
+	   	}
+	   	else{
+	   		rTime = 0;
+	   	}
+	   	//reset if r is held long enough or player hits the ground
+	   	if(rTime >= 3 || oBoi.aabb.collidesWithVerts(oSurface.verts)){
 	   			dettachGhosts(runs);
 	   			oBoi.translate = mat4.create();
 	   			oBoi.onStart();
@@ -211,15 +219,11 @@ function start(){
 	   			raceTime = 0;
 	   			Input[32] = false;
 	   			rTime = 0;
-	   		}
-	   	}
-	   	else{
-	   		rTime = 0;
 	   	}
 
 	   	//toggle fullscreen
 	   	//70 = 'f' 122 = 'f11'
-	   	if(Input[122] && !fullscreen){
+	   	if((Input[122] || Input[70]) && !fullscreen){
 	   		canvas.height = sHeight;
 			canvas.width = sWidth;
 			UIcanvas.height = sHeight;
@@ -227,9 +231,10 @@ function start(){
 			gl.viewport(0,0, sWidth, sHeight);
 			fullscreen = true;
 			Input[122] = false;
+			Input[70] = false;
 	   	}
 
-	   	if(Input[122] && fullscreen){
+	   	if((Input[122] || Input[70]) && fullscreen){
 	   		canvas.height = 480;
 			canvas.width = 640;
 			UIcanvas.height = 480;
@@ -237,7 +242,10 @@ function start(){
 			gl.viewport(0,0, 640, 480);
 			fullscreen = false;
 			Input[122] = false;
+			Input[70] = false;
 	   	}
+
+	   	
 
 	    //refresh frame
 	    refreshFrame(gl);
@@ -257,6 +265,7 @@ function start(){
 		//	+ " | " +  oBoi.aabb.max.toString(),20,70);
 		//ctx.fillText(oBoi.collidesWith(rings[currentRing]),20,90);
 		ctx.fillText("DEADSTICK", UIcanvas.width-135, 30);
+		//ctx.fillText(oBoi.aabb.collidesWithVerts(oSurface.verts), UIcanvas.width-135, 60);
 
 		//start screen
 		if(!started){
@@ -292,9 +301,11 @@ function start(){
  	}
   	requestAnimationFrame(render);
 	//END OF LOOP
-	
 }
 
+
+
+//refresh gl frame
 function refreshFrame(gl){
 	gl.clearDepth(1.0);
 	gl.enable(gl.DEPTH_TEST);

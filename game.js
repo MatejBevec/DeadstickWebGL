@@ -19,9 +19,11 @@ function GameObject(label){
 	this.pAcceleration = [0.0,0.0,0.0];
 	this.pMass = 0;
 	this.pForces = {};
+
 }
-GameObject.prototype.init = function(){
-	//is called at the start of the scene
+GameObject.prototype.onStart = function(){
+	//to be called in the constructor
+	//initializes non constant properties of a GameObject
 }
 GameObject.prototype.onTick = function(){
 	//...
@@ -110,12 +112,13 @@ function VisibleObject(label){
 	this.visible = true;
 
 	//collider / bounding box
-	this.aabb = {
+	/*this.aabb = {
 		minInit: [0,0,0],
 		maxInit: [0,0,0],
 		min: [0,0,0],
 		max: [0,0,0],
-	}
+	}*/
+	this.aabb = new BoxCollider([0,0,0],[0,0,0]);
 	
 }
 VisibleObject.prototype = Object.create(GameObject.prototype);
@@ -136,20 +139,15 @@ VisibleObject.prototype.draw = function(gl, programInfo, camera, lights){
 }
 //returns the model's vertices, transformed by the objects transformation martices
 VisibleObject.prototype.getVertices = function(){
-	var vert = null;
-	if(this.model){
-		vert = [];
-		console.log(this.model.vert);
-		var mat = this.getMatrixLocal();
-		for(var i; i < this.model.vert.length; i++){
-			//mat4.mul(v,mat,v);//wrong
-			console.log(this.model.vert[i]); //
-			vec4.tranformMat4(this.model.vert[i],this.model.vert[i],mat);
-			console.log("hello");
-			vert.push(v); //
-		}
+	var vertsFlat = this.model.mesh.vertices;
+	var mat = this.getMatrixGlobal();
+	var verts = [];
+	for(var i = 0; i < vertsFlat.length; i += 3){
+		var v = [vertsFlat[i], vertsFlat[i+1], vertsFlat[i+2]];
+		vec3.transformMat4(v,v,mat);
+		verts.push(v);
 	}
-	return vert;
+	return verts;
 }
 //checks whether this object collides with the given object at the moment
 //(not sure where to call it)
@@ -169,26 +167,6 @@ VisibleObject.prototype.collidesWith = function(obj){
 	else{
 		return false;
 	}
-}
-VisibleObject.prototype.collidesWithMesh = function(obj){
-	var trans = obj.getMatrixGlobal();
-	mat4.invert(trans, trans);
-	min = this.aabb.min;
-	max = this.aabb.max;
-	var t = isolateTranslation(trans);
-	vec3.transformMat4(min, min, t);
-	vec3.transformMat4(max, max, t);
-
-	for(var i in obj.model.vert){
-		var point = obj.model.vert[i];
-		var check = (point[0] >= min[0] && point[0] <= max[0]) &&
-				(point[1] >= min[1] && point[1] <= max[1]) &&
-				(point[2] >= min[2] && point[2] <= max[2]);
-		if(check){
-			return true;
-		}
-	}
-	return false;
 }
 VisibleObject.prototype.updateAABB = function(){
 	vec3.transformMat4(this.aabb.min, this.aabb.minInit, this.translate);
@@ -269,13 +247,14 @@ function loadFile(){
 
 //scene object experimentation
 
-function Scene(){
+function Scene(name){
 	this.root = new GameObject("objRoot");
 	this.cameras = [];
 	this.lights = [];
 	this.setUp = function(){
 		//set up the scene
 	}
+	this.sceneName = name;
 }
 Scene.prototype.attach = function(obj){
 	this.root.attach(obj);
@@ -371,4 +350,58 @@ function isolateScaling(mat){
 	var newMat = mat4.create();
 	mat4.fromScaling(newMat, vec);
 	return newMat;
+}
+
+
+
+//GENEREAL COLLISION DETECTION
+function BoxCollider(min,max){
+	this.minInit = min;
+	this.maxInit = max;
+	this.min = min;
+	this.max = max;
+}
+BoxCollider.prototype.collidesWithPoint = function(point){
+		var check = (point[0] >= this.min[0] && point[0] <= this.max[0]) &&
+				(point[1] >= this.min[1] && point[1] <= this.max[1]) &&
+				(point[2] >= this.min[2] && point[2] <= this.max[2]);
+	return check;
+}
+BoxCollider.prototype.collidesWithBox = function(aabb){
+	if(obj && aabb){
+		var check = (aabb.min[0] <= this.max[0] && this.min[0] <= aabb.max[0]) &&
+				(aabb.min[1] <= this.max[1] && this.min[1] <= aabb.max[1]) &&
+				(aabb.min[2] <= this.max[2] && this.min[2] <= aabb.max[2]);
+		return check;
+	}
+	else{
+		return false;
+	}
+}
+//checks if this AABB collides with a point array (nested)
+BoxCollider.prototype.collidesWithVerts = function(verts){
+
+	min = this.min;
+	max = this.max;
+
+	if(verts != null && verts.length > 0){
+		for(var i = 0; i < verts.length; i += 3){
+			var point = verts[i];
+			var check = (point[0] >= min[0] && point[0] <= max[0]) &&
+					(point[1] >= min[1] && point[1] <= max[1]) &&
+					(point[2] >= min[2] && point[2] <= max[2]);
+				//check = point[2] < max[2] && point[2] > min[2] 
+			if(check){
+				return true;
+			}
+		}
+		return false;
+	}
+	return false;
+}
+//update aabb
+BoxCollider.prototype.update = function(mat){
+	vec3.transformMat4(this.min, this.minInit, mat);
+	vec3.transformMat4(this.max, this.maxInit, mat);
+}
 }
