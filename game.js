@@ -404,4 +404,16 @@ BoxCollider.prototype.update = function(mat){
 	vec3.transformMat4(this.min, this.minInit, mat);
 	vec3.transformMat4(this.max, this.maxInit, mat);
 }
+
+
+//NEST A FLAT ARRAY
+function nestArray(a,size){
+	var out = [];
+	for(var i = 0; i < a.length; i += size){
+		out[i] = [];
+		for(var j = 0; j < size; j++){
+			out[i][j] = a[i+j];
+		}
+	}
+	return out;
 }
